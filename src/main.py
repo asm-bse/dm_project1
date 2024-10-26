@@ -26,6 +26,7 @@ filling_order = (
     "flight_statuses",
     "problems",
     "flight_data",
+    "seats",
     "bookings",
     "subsystems",
     "maintenance_types",
