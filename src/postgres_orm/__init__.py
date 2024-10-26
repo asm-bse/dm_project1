@@ -75,16 +75,6 @@ class PostgresORM:
         except Exception as e:
             print(f"Error retrieving data from {table}. Error - {e}")
             return []
-        
-    def get_occupied_seat_ids(self, flight_id: int) -> list[int]:
-        try:
-            query = f"SELECT seat_id FROM {self.schema_name}.seats WHERE seat_status = 'Occupied' AND flight_id = %s"
-            self.cursor.execute(query, (flight_id,))
-            results = self.cursor.fetchall()
-            return [row[0] for row in results]
-        except Exception as e:
-            print(f"An error occurred while fetching occupied seats for flight_id {flight_id}: {e}")
-            return []
             
     def __fill_airlines(self, fillings: int) -> bool:
         try:
@@ -102,22 +92,35 @@ class PostgresORM:
     
         return True
     
+    def occupy_seats(self, seat_ids: list[int]) -> None:
+        try:
+            query = f"UPDATE {self.schema_name}.seats SET seat_status = 'Occupied' WHERE seat_id = ANY(%s)"
+            
+            self.cursor.execute(query, (seat_ids,))
+            
+            self.connection.commit()
+
+            print(f"Successfully updated {len(seat_ids)} seats to 'Occupied' status.")
+        except Exception as e:
+            print(f"Failed to update seat status: {e}")
+
+            return False
+        
+        return True
+    
     def __fill_seats(self, fillings: int) -> bool:
         try:
             flight_ids = self.get_table_ids("flight_data", "flight_id")
 
-            seat_classes = ["Economy", "Business", "First Class"]
-            seat_statuses = ["Available", "Occupied"]
-
-            rows = range(1, 51)
+            rows = range(1, 41)
             seat_letters = ["A", "B", "C", "D", "E", "F"]
 
             for flight_id in flight_ids:
                 for row in rows:
                     for letter in seat_letters:
                         seat_number = f"{row}{letter}"
-                        seat_class = self.faker.random.choice(seat_classes)
-                        seat_status = self.faker.random.choice(seat_statuses)
+                        seat_class =  "Business" if row <= 3 else "First Class" if row <= 6 else "Economy"
+                        seat_status = "Available"
 
                         self.cursor.execute(
                             f"INSERT INTO {self.schema_name}.seats (seat_number, seat_class, seat_status, flight_id) VALUES (%s, %s, %s, %s)",
@@ -152,11 +155,15 @@ class PostgresORM:
         return True
     
     def __fill_bookings(self, fillings: int) -> bool:
+        occupied_seats = []
         try:
             for _ in range(fillings):
                 customer_id = self.faker.random.choice(self.get_table_ids(table="customers", column="customer_id"))
                 flight_id = self.faker.random.choice(self.get_table_ids(table="flight_data", column="flight_id"))
-                seat = self.faker.random.choice(self.get_occupied_seat_ids(flight_id=flight_id))
+
+                seat = self.faker.random.choice(self.get_table_ids(table="seats", column="seat_id"))
+                occupied_seats.append(seat)
+
                 price = round(self.faker.random.uniform(50, 1000), 2)
                 payment_status = self.faker.boolean()
 
@@ -168,6 +175,12 @@ class PostgresORM:
                 self.connection.commit()
         except Exception as e:
             print(f"Failed to fill bookings table: {e}")
+
+            return False
+
+        self.occupy_seats(occupied_seats)
+
+        return True
 
     def __fill_work_orders(self, fillings: int) -> bool:
         try:
@@ -279,8 +292,8 @@ class PostgresORM:
     def __fill_flights(self, fillings: int) -> bool:
         try: 
             airports = self.get_table_ids(table="airports", column="airport_id")
-            for _ in range(fillings):
-                flight_number = f'{self.faker.bothify(text="????")}{self.faker.random_number(fix_len=True, digits=2)}'
+            for _ in range(int(fillings / 5)):
+                flight_number = f'{self.faker.bothify(text="??").upper()}{self.faker.random_number(fix_len=True, digits=4)}'
 
                 origin = self.faker.random.choice(airports)
                 destination = self.faker.random.choice(airports)
@@ -335,7 +348,7 @@ class PostgresORM:
     def __fill_subsystems(self, fillings: int) -> bool:
         try:
             subsystem_types = ["Engine", "Avionics", "Hydraulics", "Landing Gear", "Fuel System", "Electrical System"]
-            for _ in range(fillings):
+            for _ in range(6):
                 subsystem_type = self.faker.random.choice(subsystem_types)
 
                 self.cursor.execute(
@@ -371,8 +384,8 @@ class PostgresORM:
     def __fill_reporteurs(self, fillings: int):
         try:
             for _ in range(fillings):
-                reporteur_class = self.faker.random.choice(["class1", "class2", "class3"])
-                reporteur_name = self.faker.random.choice(["name1", "name2", "name3"])
+                reporteur_class = self.faker.random.choice(["Steward", "Pilot", "Mechanic"])
+                reporteur_name = self.faker.name()
 
                 self.cursor.execute(
                         f'INSERT INTO {self.schema_name}.reporteurs (reporteur_class, reporteur_name) VALUES (%s, %s)',
@@ -396,28 +409,6 @@ class PostgresORM:
                 self.cursor.execute(
                         f'INSERT INTO {self.schema_name}.reporteurs (reporteur_class, reporteur_name) VALUES (%s, %s)',
                         (reporteur_class, reporteur_name)
-                    )
-                
-                self.connection.commit()
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-            return False
-        
-        return True
-    
-    def __fill_bookings(self, fillings: int) -> bool:
-        try:
-            for _ in range(fillings):
-                flight_id = self.faker.random.choice(self.get_table_ids(table="flight_data", column="flight_id"))
-                customer_id = self.faker.random.choice(self.get_table_ids(table="customers", column="customer_id"))
-                seat_id = self.faker.random.choice(self.get_table_ids(table="seats", column="seat_id"))
-                price = self.faker.random_number(fix_len=True, digits=4)
-                payment_status = self.faker.random.choice([True, False])
-
-                self.cursor.execute(
-                        f'INSERT INTO {self.schema_name}.bookings (flight_id, customer_id, seat_id, price, payment_status) VALUES (%s, %s, %s, %s, %s)',
-                        (flight_id, customer_id, seat_id, price, payment_status)
                     )
                 
                 self.connection.commit()
@@ -508,7 +499,6 @@ class PostgresORM:
     def __fill_problems(self, fillings: int) -> bool:
         try:
             problem_types = [
-                "Pilot shitted himself",
                 "Engine Failure",
                 "Avionics Issue",
                 "Fuel System Leak",

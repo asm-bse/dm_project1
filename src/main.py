@@ -1,11 +1,11 @@
 from postgres_orm import PostgresORM
 
-HOST = ""
-PORT = ""
-USERNAME = ""
-PASSWORD = ""
-DB_NAME = ""
-SCHEMA_NAME = ""
+HOST = "localhost"
+PORT = "5432"
+USERNAME = "admin"
+PASSWORD = "pass"
+DB_NAME = "local_dm"
+SCHEMA_NAME = "dm"
 
 orm = PostgresORM(
     host=HOST,
