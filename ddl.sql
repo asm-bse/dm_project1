@@ -79,18 +79,32 @@ CREATE TABLE flight_data (
         FOREIGN KEY (problem_id) REFERENCES problems (problem_id)
 ); 
 
+DROP TABLE IF EXISTS seats;
+CREATE TABLE seats 
+(
+    seat_id SERIAL PRIMARY KEY,
+    seat_number varchar(3) NOT NULL, --1a to 40f
+    seat_class varchar(33) NOT NULL, --rows 1 - 3 are business and rows 4 - 40 are economy
+    seat_status varchar(33) NOT NULL, --available or occupied
+    flight_id INT NOT NULL -- foreign key
+    CONSTRAINT fk_flight_id
+        FOREIGN KEY (flight_id) REFERENCES flight_data (flight_id)
+);
+
 DROP TABLE IF EXISTS bookings;
 CREATE TABLE bookings (
     booking_id SERIAL PRIMARY KEY,
     flight_id INT NOT NULL,
     customer_id INT NOT NULL,
-    seat_class VARCHAR(255) NOT NULL,
+    seat_id INT NOT NULL,
     price NUMERIC(7,2) NOT NULL,
     payment_status BOOLEAN NOT NULL,
     CONSTRAINT fk_flight_id
         FOREIGN KEY (flight_id) REFERENCES flight_data (flight_id),
     CONSTRAINT fk_customer_id
-        FOREIGN KEY (customer_id) REFERENCES customers (customer_id)
+        FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
+    CONSTRAINT fk_seat_id
+        FOREIGN KEY (seat_id) REFERENCES seats (seat_id)
 ); 
 
 DROP TABLE IF EXISTS subsystems;
