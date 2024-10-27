@@ -348,9 +348,7 @@ class PostgresORM:
     def __fill_subsystems(self, fillings: int) -> bool:
         try:
             subsystem_types = ["Engine", "Avionics", "Hydraulics", "Landing Gear", "Fuel System", "Electrical System"]
-            for _ in range(6):
-                subsystem_type = self.faker.random.choice(subsystem_types)
-
+            for subsystem_type in subsystem_types:
                 self.cursor.execute(
                     f"INSERT INTO {self.schema_name}.subsystems (subsystem_type) VALUES (%s)",
                     (subsystem_type,)
@@ -366,12 +364,10 @@ class PostgresORM:
     def __fill_maintenance_types(self, fillings: int) -> bool:
         try:
             maintenance_type_names = ["Routine Check", "Engine Repair", "Scheduled Maintenance", "Emergency Repair", "Software Update"]
-            for _ in range(fillings):
-                maintenance_type_name = self.faker.random.choice(maintenance_type_names)
-
+            for mainenance_type in maintenance_type_names:
                 self.cursor.execute(
                     f"INSERT INTO {self.schema_name}.maintenance_types (maintenance_type_name) VALUES (%s)",
-                    (maintenance_type_name,)
+                    (mainenance_type,)
                 )
                 self.connection.commit()
         except Exception as e:
