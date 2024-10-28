@@ -3,6 +3,8 @@ from datetime import timedelta
 from faker import Faker
 import psycopg2._psycopg
 
+from random import random
+
 class PostgresORM:
     def __init__(self, host: str, port: str, username: str, password: str, db_name: str, schema_name: str):
         self.host = host
@@ -108,26 +110,45 @@ class PostgresORM:
         
         return True
     
-    def __fill_seats(self, fillings: int) -> bool:
+    def __fill_seat_classes(self, fillings: int) -> bool:
         try:
-            flight_ids = self.get_table_ids("flight_data", "flight_id")
-
             rows = range(1, 41)
             seat_letters = ["A", "B", "C", "D", "E", "F"]
 
-            for flight_id in flight_ids:
-                for row in rows:
-                    for letter in seat_letters:
-                        seat_number = f"{row}{letter}"
-                        seat_class =  "Business" if row <= 3 else "First Class" if row <= 6 else "Economy"
-                        seat_status = "Available"
+            for row in rows:
+                for letter in seat_letters:
+                    seat_number = f"{row}{letter}"
+                    seat_class =  "Business" if row <= 3 else "First Class" if row <= 6 else "Economy"
 
-                        self.cursor.execute(
-                            f"INSERT INTO {self.schema_name}.seats (seat_number, seat_class, seat_status, flight_id) VALUES (%s, %s, %s, %s)",
-                            (seat_number, seat_class, seat_status, flight_id)
+                    self.cursor.execute(
+                            f"INSERT INTO {self.schema_name}.seat_classes (seat_number, seat_class) VALUES (%s, %s)",
+                            (seat_number, seat_class)
                         )
+                    
+                    self.connection.commit()
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
-                        self.connection.commit()
+            return False
+        
+        return True
+
+    
+    def __fill_seats(self, fillings: int) -> bool:
+        try:
+            flight_ids = self.get_table_ids("flight_data", "flight_id")
+            seat_numbers = self.get_table_ids("seat_classes", "seat_number")
+
+            for flight_id in flight_ids:
+                for seat_number in seat_numbers:
+                    seat_status = "Available"
+
+                    self.cursor.execute(
+                        f"INSERT INTO {self.schema_name}.seats (seat_number, seat_status, flight_id) VALUES (%s, %s, %s)",
+                        (seat_number, seat_status, flight_id)
+                    )
+
+                    self.connection.commit()
         except Exception as e:
             print(f"An error occurred: {e}")
 
@@ -292,18 +313,22 @@ class PostgresORM:
     def __fill_flights(self, fillings: int) -> bool:
         try: 
             airports = self.get_table_ids(table="airports", column="airport_id")
+            airlines = self.get_table_ids(table="airlines", column="airline_id")
             for _ in range(int(fillings / 5)):
                 flight_number = f'{self.faker.bothify(text="??").upper()}{self.faker.random_number(fix_len=True, digits=4)}'
 
                 origin = self.faker.random.choice(airports)
                 destination = self.faker.random.choice(airports)
+
+                airline_id = self.faker.random.choice(airlines)
                 
-                date = self.faker.date_between(start_date="-1y", end_date="today").isoformat()
-                time = self.faker.date_time_between(start_date="-1y", end_date="now").strftime('%Y-%m-%d %H:%M:%S')
+                hours = self.faker.random.randint(1, 10)
+                minutes = self.faker.random.randint(0, 59)
+                flight_length = f'{hours} hours {minutes} minutes'
 
                 self.cursor.execute(
-                    f'INSERT INTO {self.schema_name}.flights (flight_number, origin, destination, date, time) VALUES (%s, %s, %s, %s, %s)',
-                    (flight_number, origin, destination, date, time)
+                    f'INSERT INTO {self.schema_name}.flights (flight_number, origin, destination, airline_id, flight_length) VALUES (%s, %s, %s, %s, %s)',
+                    (flight_number, origin, destination, airline_id, flight_length)
                     )
             
                 self.connection.commit()
@@ -448,18 +473,36 @@ class PostgresORM:
                 number_of_flight_crew = self.faker.random_number(fix_len=True, digits=1)
                 available_seating = capacity_of_aircraft - number_of_passangers
 
+                scheduled_departure_date = self.faker.date_between(start_date="today", end_date="+1y")
+                scheduled_departure_time = self.faker.time_object()
+                
+                fake_status_id_number = random()
+                if fake_status_id_number >= 0.8: 
+                    if fake_status_id_number <= 0.95:
+                        problem_id = pks_content["flight_status_id"][1]
+                    else:
+                        problem_id = pks_content["flight_status_id"][2]
+                else:
+                    problem_id = pks_content["flight_status_id"][0]
+
+                if random() <= 0.8:
+                    problem_id = pks_content["problem_id"][0]
+                else:
+                    problem_id = self.faker.random.choice(pks_content["problem_id"])
+
                 self.cursor.execute(
-                    f'INSERT INTO {self.schema_name}.flight_data (flight_number, aircraft_registration_number, airline_id, flight_status_id, problem_id, number_of_passengers, number_of_cabin_crew, number_of_flight_crew, available_seating) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)',
+                    f'INSERT INTO {self.schema_name}.flight_data (flight_number, aircraft_registration_number, flight_status_id, problem_id, number_of_passengers, number_of_cabin_crew, number_of_flight_crew, available_seating, scheduled_departure_date, scheduled_departure_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
                     (
                         self.faker.random.choice(pks_content["flight_number"]),
                         aircraft_reg,
-                        self.faker.random.choice(pks_content["airline_id"]),
                         self.faker.random.choice(pks_content["flight_status_id"]),
-                        self.faker.random.choice(pks_content["problem_id"]),
+                        problem_id,
                         number_of_passangers,
                         number_of_cabin_crew,
                         number_of_flight_crew,
-                        available_seating
+                        available_seating,
+                        scheduled_departure_date,
+                        scheduled_departure_time
                     )
                 )
 
@@ -495,6 +538,7 @@ class PostgresORM:
     def __fill_problems(self, fillings: int) -> bool:
         try:
             problem_types = [
+                "Everything Ok"
                 "Engine Failure",
                 "Avionics Issue",
                 "Fuel System Leak",
