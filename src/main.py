@@ -26,6 +26,7 @@ filling_order = (
     "flight_statuses",
     "problems",
     "flight_data",
+    "seat_classes",
     "seats",
     "bookings",
     "subsystems",
@@ -36,4 +37,4 @@ filling_order = (
 )
 
 for table in filling_order:
-    orm.fill_table(table=table, fillings=100)
+    result = orm.fill_table(table=table, fillings=100)
