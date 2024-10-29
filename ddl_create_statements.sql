@@ -87,7 +87,7 @@ CREATE TABLE project1.flight_data (
 CREATE TABLE project1.seat_classes 
 (
     seat_number varchar(3) NOT NULL PRIMARY KEY, --1a to 40f, considering that all the aircrafts have the same seatings
-    seat_class varchar(33) NOT NULL, --rows 1 - 3 are business and rows 4 - 40 are economy for all the aircrafts
+    seat_class varchar(33) NOT NULL --rows 1 - 3 are business and rows 4 - 40 are economy for all the aircrafts
 );
 
 
