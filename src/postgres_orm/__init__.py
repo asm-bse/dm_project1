@@ -479,11 +479,11 @@ class PostgresORM:
                 fake_status_id_number = random()
                 if fake_status_id_number >= 0.8: 
                     if fake_status_id_number <= 0.95:
-                        problem_id = pks_content["flight_status_id"][1]
+                        fligt_status = pks_content["flight_status_id"][1]
                     else:
-                        problem_id = pks_content["flight_status_id"][2]
+                        fligt_status = pks_content["flight_status_id"][2]
                 else:
-                    problem_id = pks_content["flight_status_id"][0]
+                    fligt_status = pks_content["flight_status_id"][0]
 
                 if random() <= 0.8:
                     problem_id = pks_content["problem_id"][0]
@@ -495,7 +495,7 @@ class PostgresORM:
                     (
                         self.faker.random.choice(pks_content["flight_number"]),
                         aircraft_reg,
-                        self.faker.random.choice(pks_content["flight_status_id"]),
+                        fligt_status,
                         problem_id,
                         number_of_passangers,
                         number_of_cabin_crew,
