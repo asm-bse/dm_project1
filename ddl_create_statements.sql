@@ -25,6 +25,11 @@ CREATE TABLE project1.airports (
     airport_country varchar(255) NOT NULL
 );   
 
+CREATE TABLE project1.airlines (
+    airline_id SERIAL PRIMARY KEY,
+    airline_name varchar(255) NOT NULL
+); 
+
 
 CREATE TABLE project1.flights (
     flight_number varchar(6) NOT NULL PRIMARY KEY, --unique, mask AA9999, one flight_nubmer is used by multiple scheduler flights, like daily
@@ -41,10 +46,7 @@ CREATE TABLE project1.flights (
 ); 
 
 
-CREATE TABLE project1.airlines (
-    airline_id SERIAL PRIMARY KEY,
-    airline_name varchar(255) NOT NULL
-); 
+
 
 CREATE TABLE project1.problems (
     problem_id SERIAL PRIMARY KEY,
@@ -86,8 +88,6 @@ CREATE TABLE project1.seat_classes
 (
     seat_number varchar(3) NOT NULL PRIMARY KEY, --1a to 40f, considering that all the aircrafts have the same seatings
     seat_class varchar(33) NOT NULL, --rows 1 - 3 are business and rows 4 - 40 are economy for all the aircrafts
-    CONSTRAINT fk_seat_number
-        FOREIGN KEY (seat_number) REFERENCES project1.seat_classes (seat_number)
 );
 
 
