@@ -4,7 +4,7 @@ DenisProcyon - Denis Shadrin
 
 asm-bse - Aleksandr Smolin
 
-## Credentials
+## Credentials - View Only
 host - 89.110.124.197
 
 port - 5432
@@ -16,3 +16,12 @@ schema_name - project1
 user - user1
 
 passowrd - user1pwd1
+
+## Credentials - Edit
+
+user - 
+
+passowrd - 
+
+
+
