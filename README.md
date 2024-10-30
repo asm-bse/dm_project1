@@ -15,13 +15,13 @@ schema_name - project1
 
 user - user1
 
-passowrd - user1pwd1
+password - user1pwd1
 
 ## Credentials - Edit
 
 user - 
 
-passowrd - 
+password - 
 
 
 
